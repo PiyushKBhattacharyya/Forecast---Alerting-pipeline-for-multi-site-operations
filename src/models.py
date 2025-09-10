@@ -1,3 +1,16 @@
+"""
+models.py - Baseline and improved forecasting models.
+
+References:
+- Seasonal Naive Forecasting (Hyndman & Athanasopoulos, Forecasting: Principles and Practice).
+- scikit-learn GradientBoostingRegressor:
+  https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html
+- XGBoost Regressor (optional):
+  https://xgboost.readthedocs.io/en/stable/python/python_api.html#xgboost.XGBRegressor
+- Mean Absolute Percentage Error (MAPE):
+  https://en.wikipedia.org/wiki/Mean_absolute_percentage_error
+"""
+
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
@@ -153,3 +166,4 @@ def run_modeling(df: pd.DataFrame, feature_cols: List[str]) -> Tuple[pd.DataFram
                 "mape_model": res.mape_model,
             })
     return pd.concat(forecasts, ignore_index=True), pd.DataFrame(metrics)
+    

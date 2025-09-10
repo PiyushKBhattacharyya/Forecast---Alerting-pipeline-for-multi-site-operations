@@ -1,3 +1,10 @@
+"""
+data_loader.py - Load operations and metadata CSVs.
+
+References:
+- pandas.read_csv documentation: https://pandas.pydata.or   g/docs/reference/api/pandas.read_csv.html
+"""
+
 import pandas as pd
 from pathlib import Path
 from typing import Optional

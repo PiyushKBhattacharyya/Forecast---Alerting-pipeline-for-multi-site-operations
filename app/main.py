@@ -1,3 +1,9 @@
+"""
+References:
+- FastAPI documentation: https://fastapi.tiangolo.com/
+- Python pathlib documentation: https://docs.python.org/3/library/pathlib.html
+"""
+
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pathlib import Path
@@ -15,12 +21,16 @@ OUTPUT_DIR = ROOT / "Output"
 
 @app.get("/run")
 def run_pipeline_endpoint():
+    """Run the full pipeline and save results to Output/"""
     run_pipeline()
     return {"status": "Pipeline executed successfully"}
 
 
 @app.get("/download/all")
 def download_all():
+    """
+    Download all output files (forecasts, metrics, anomalies) as a single ZIP archive.
+    """
     mapping = {
         "forecast_results.csv": OUTPUT_DIR / "forecast_results.csv",
         "forecast_metrics.csv": OUTPUT_DIR / "forecast_metrics.csv",
@@ -52,7 +62,7 @@ def download_file(file_type: str):
     mapping = {
         "forecasts": OUTPUT_DIR / "forecast_results.csv",
         "metrics": OUTPUT_DIR / "forecast_metrics.csv",
-        "anomalies": OUTPUT_DIR / "anomalies.csv",
+        "alerts": OUTPUT_DIR / "alerts.csv",
     }
 
     if file_type not in mapping:

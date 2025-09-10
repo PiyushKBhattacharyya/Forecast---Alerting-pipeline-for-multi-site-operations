@@ -1,3 +1,12 @@
+"""
+pipeline.py - Orchestrates full pipeline: load, feature, model, anomalies, save outputs.
+
+References:
+- pathlib, pandas, and numpy standard usage.
+- General pipeline structure inspired by common ML engineering practices
+  (scikit-learn pipelines and modular code organization).
+"""
+
 import pandas as pd
 from pathlib import Path
 

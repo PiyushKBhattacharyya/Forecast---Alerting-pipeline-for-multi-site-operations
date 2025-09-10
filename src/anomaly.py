@@ -1,3 +1,12 @@
+"""
+anomaly.py - Detect downtime anomalies using STL decomposition and robust z-score.
+
+References:
+- STL decomposition: statsmodels.tsa.seasonal.STL
+  https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.STL.html
+- Z-score based anomaly detection (general statistical method).
+"""
+
 import numpy as np
 import pandas as pd
 from typing import List

@@ -1,3 +1,12 @@
+"""
+features.py - Feature engineering for site-level operations.
+
+References:
+- Rolling window features: pandas.Series.rolling
+  https://pandas.pydata.org/docs/reference/api/pandas.Series.rolling.html
+- Date/time feature extraction (dayofweek, month, etc.) from pandas.DatetimeIndex.
+"""
+
 import pandas as pd
 import numpy as np
 from typing import Optional, List
