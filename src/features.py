@@ -11,19 +11,25 @@ import pandas as pd
 import numpy as np
 from typing import Optional, List
 
-# Feature engineering utilities
-# - Calendar features
-# - Rolling means as baselines
-# - Site metadata join
+# ============================================================
+# Feature engineering utilities:
+# 1. Calendar features (day of week, month, etc.)
+# 2. Rolling mean/std features (short- and long-term trends)
+# 3. Site metadata join (attach site-level attributes)
+# ============================================================
 
 def add_calendar_features(df: pd.DataFrame, date_col: str = "date") -> pd.DataFrame:
+    """
+    Add calendar/time-based features from the date column.
+    - day of week, day of month, month, ISO week, weekend flag
+    """
     d = df.copy()
-    d[date_col] = pd.to_datetime(d[date_col])
-    d["dow"] = d[date_col].dt.dayofweek  # 0=Mon
-    d["dom"] = d[date_col].dt.day
-    d["month"] = d[date_col].dt.month
-    d["week"] = d[date_col].dt.isocalendar().week.astype(int)
-    d["is_weekend"] = (d["dow"] >= 5).astype(int)
+    d[date_col] = pd.to_datetime(d[date_col]) # ensure datetime type
+    d["dow"] = d[date_col].dt.dayofweek # 0=Mon, 6=Sun
+    d["dom"] = d[date_col].dt.day # day of month
+    d["month"] = d[date_col].dt.month # numeric month
+    d["week"] = d[date_col].dt.isocalendar().week.astype(int) # ISO week number
+    d["is_weekend"] = (d["dow"] >= 5).astype(int) # weekend indicator
     return d
 
 
@@ -32,16 +38,24 @@ def add_rolling_features(df: pd.DataFrame,
                          date_col: str = "date",
                          targets: List[str] = ["units_produced", "power_kwh"],
                          windows: List[int] = [3, 7, 14, 28]) -> pd.DataFrame:
+    """
+    Add rolling mean and std features for target variables.
+    - Groups by `site_id` to compute rolling stats per site
+    - Supports multiple window sizes (default: 3, 7, 14, 28 days)
+    - Creates new columns: <target>_rollmean_<window>, <target>_rollstd_<window>
+    """
     d = df.copy()
-    d = d.sort_values(by + [date_col])
+    d = d.sort_values(by + [date_col]) # sort by site and date for rolling
     for tgt in targets:
         if tgt not in d.columns:
             continue
         for w in windows:
+            # Rolling mean with a minimum number of observations = half the window
             d[f"{tgt}_rollmean_{w}"] = (
                 d.groupby(by)[tgt]
                 .transform(lambda s: s.rolling(w, min_periods=max(1, w//2)).mean())
             )
+            # Rolling std with the same logic
             d[f"{tgt}_rollstd_{w}"] = (
                 d.groupby(by)[tgt]
                 .transform(lambda s: s.rolling(w, min_periods=max(1, w//2)).std())
@@ -50,6 +64,11 @@ def add_rolling_features(df: pd.DataFrame,
 
 
 def join_site_meta(ops: pd.DataFrame, site_meta: pd.DataFrame) -> pd.DataFrame:
+    """
+    Join site-level metadata (static features like location, capacity).
+    - Ensures site_id is string in both datasets
+    - Encodes categorical metadata columns as numeric codes
+    """
     meta = site_meta.copy()
 
     # Normalize join key dtype
@@ -68,6 +87,13 @@ def join_site_meta(ops: pd.DataFrame, site_meta: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_features(ops: pd.DataFrame, site_meta: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+    """
+    Master function:
+    1. Add calendar features
+    2. Add rolling features
+    3. Join with site metadata (if provided)
+    Returns enriched dataset ready for modeling.
+    """
     d = add_calendar_features(ops)
     d = add_rolling_features(d)
     if site_meta is not None:

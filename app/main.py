@@ -12,16 +12,24 @@ import zipfile
 
 from src.pipeline import run_pipeline
 
-app = FastAPI()
+# Initialize app
+app = FastAPI(title="Forecast + Anomaly Detection API")
 
 # Paths
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "Output"
 
-
+# API Endpoints
 @app.get("/run")
 def run_pipeline_endpoint():
-    """Run the full pipeline and save results to Output/"""
+    """
+    Trigger the full pipeline:
+    - Loads raw data
+    - Prepares features
+    - Runs forecasts (units + power)
+    - Detects anomalies
+    - Saves CSV outputs under OUTPUT_DIR
+    """
     run_pipeline()
     return {"status": "Pipeline executed successfully"}
 
@@ -29,7 +37,7 @@ def run_pipeline_endpoint():
 @app.get("/download/all")
 def download_all():
     """
-    Download all output files (forecasts, metrics, anomalies) as a single ZIP archive.
+    Download all output files (forecasts, metrics, anomalies) bundled as a single ZIP archive.
     """
     mapping = {
         "forecast_results.csv": OUTPUT_DIR / "forecast_results.csv",
@@ -56,8 +64,12 @@ def download_all():
 @app.get("/download/{file_type}")
 def download_file(file_type: str):
     """
-    Download processed output files individually.
-    file_type must be one of: forecasts, metrics, anomalies
+    Download a single processed file.
+
+    Parameters
+    ----------
+    file_type : str
+        Must be one of: forecasts_units, forecasts_power, metrics, alerts
     """
     mapping = {
         "forecasts": OUTPUT_DIR / "forecast_results.csv",

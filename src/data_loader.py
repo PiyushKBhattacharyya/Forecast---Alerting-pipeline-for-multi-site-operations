@@ -15,6 +15,12 @@ DATA_DIR = Path(__file__).resolve().parents[1] / "Data"
 # Expected columns in site_meta: site_id, region, capacity, ...
 
 def read_operations(path: Optional[str] = None, data_dir: Path = DATA_DIR) -> pd.DataFrame:
+    """
+    Read operations_daily.csv into a dataframe.
+
+    Expected columns: site_id, date, units_produced, power_kwh, ...others...
+    Returns dataframe with `date` as datetime and sorted by site_id, date.
+    """
     REQUIRED_COLS = {"date", "site_id", "units_produced", "power_kwh"}
 
     def _load(p: Path) -> pd.DataFrame:
@@ -42,6 +48,9 @@ def read_operations(path: Optional[str] = None, data_dir: Path = DATA_DIR) -> pd
     raise FileNotFoundError("No operations_daily CSV found in Data/")
 
 def read_site_meta(path: Optional[str] = None) -> pd.DataFrame:
+    """
+    Read site_meta.csv. Return DataFrame indexed by site_id (not required).
+    """
     p = Path(path) if path else DATA_DIR / "site_meta.csv"
     if not p.exists():
         raise FileNotFoundError(f"site_meta not found at {p}")

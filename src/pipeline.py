@@ -15,13 +15,27 @@ from src.features import prepare_features
 from src.models import run_modeling, TARGETS
 from src.anomaly import detect_anomalies
 
+# ------------------------------------------------------------
 # Directories
+# ROOT = project root (parent of /src)
+# OUTPUT_DIR = where all final deliverables are saved
+# ------------------------------------------------------------
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "Output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def run_pipeline() -> None:
+    """
+    End-to-end pipeline:
+    1. Load raw data
+    2. Engineer features
+    3. Run forecasting (baseline + improved)
+    4. Save forecasts and backtest metrics
+    5. Run anomaly detection
+    6. Save anomalies
+    """
     # 1. Load raw data
     ops = read_operations()
     site_meta = read_site_meta()

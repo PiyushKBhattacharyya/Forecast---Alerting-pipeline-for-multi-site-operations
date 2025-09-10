@@ -20,18 +20,23 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.ensemble import GradientBoostingRegressor
 
-# Optional: you can switch to XGBoost/LightGBM if installed
+# Optional: try to import XGBoost; fallback to scikit-learn if unavailable
 try:
     from xgboost import XGBRegressor  # type: ignore
     HAS_XGB = True
 except Exception:
     HAS_XGB = False
 
-HORIZON = 15
-TARGETS = ["units_produced", "power_kwh"]
+HORIZON = 15 # Forecast horizon (days ahead set to 15 since last value is exclusive)
+TARGETS = ["units_produced", "power_kwh"] # Target variables to forecast
 
-
+# Baseline model: Seasonal Naive
 def seasonal_naive_forecast(history: pd.Series, season: int = 7, horizon: int = HORIZON) -> np.ndarray:
+    """
+    Seasonal naive forecast:
+      - Repeat the last 'season' days of history into the future.
+      - If not enough history, repeat the last known value.
+    """
     if len(history) == 0:
         return np.zeros(horizon)
     if len(history) < season:
@@ -42,7 +47,7 @@ def seasonal_naive_forecast(history: pd.Series, season: int = 7, horizon: int = 
     fc = np.tile(template.values, reps)[:horizon]
     return fc
 
-
+# Dataclass to hold backtest results
 @dataclass
 class ForecastResult:
     site_id: Union[str, int]
@@ -56,15 +61,19 @@ class ForecastResult:
     mape_baseline: float
     mape_model: float
 
-
+# Utility: Mean Absolute Percentage Error
 def _mape(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
     denom = np.clip(np.abs(y_true), 1e-6, None)
     return float(np.mean(np.abs((y_true - y_pred) / denom)))
 
-
+# Improved model: Gradient Boosting or XGBoost
 def train_improved_model(train_df: pd.DataFrame, feature_cols: List[str], target: str):
+    """
+    Train an improved model on feature set.
+    - Prefers XGBRegressor if available, otherwise GradientBoostingRegressor.
+    """
     X = train_df[feature_cols].values
     y = train_df[target].values
     if HAS_XGB:
@@ -81,9 +90,21 @@ def train_improved_model(train_df: pd.DataFrame, feature_cols: List[str], target
     model.fit(X, y)
     return model
 
-
+# Rolling backtest for a single site/target
 def rolling_backtest_site(df_site: pd.DataFrame, target: str, feature_cols: List[str], horizon: int = HORIZON,
                           min_train: int = 60) -> Tuple[ForecastResult, pd.DataFrame]:
+    """
+    Run a simple rolling-origin backtest on one site & one target.
+    - Train/validate split: all but last horizon = train, last horizon = test
+    - Compare baseline (seasonal naive) vs improved model (GBM/XGB)
+    - Compute MAE and MAPE
+    - Train final model on full data to produce next-horizon forecasts
+
+    Returns
+    -------
+    ForecastResult : metrics + backtest predictions
+    pd.DataFrame   : future horizon forecast (site_id, date, target, y_hat)
+    """
     d = df_site.sort_values("date").reset_index(drop=True)
 
     # Train/validation split using expanding window with last horizon as test
@@ -103,11 +124,13 @@ def rolling_backtest_site(df_site: pd.DataFrame, target: str, feature_cols: List
     model = train_improved_model(train, feature_cols, target)
     y_hat_model = model.predict(test[feature_cols].values)
 
+    # Metrics
     mae_baseline = float(mean_absolute_error(test[target].values, base_fc))
     mae_model = float(mean_absolute_error(test[target].values, y_hat_model))
     mape_baseline = _mape(test[target].values, base_fc)
     mape_model = _mape(test[target].values, y_hat_model)
 
+    # Package results
     res = ForecastResult(
         site_id=d.loc[0, "site_id"],
         target=target,
@@ -147,8 +170,18 @@ def rolling_backtest_site(df_site: pd.DataFrame, target: str, feature_cols: List
         "y_hat": future_pred,
     })
 
-
+# Master function: run modeling across all sites & targets
 def run_modeling(df: pd.DataFrame, feature_cols: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Run modeling pipeline across all sites and targets.
+
+    Returns
+    -------
+    forecasts : pd.DataFrame
+        Horizon forecasts (site_id, date, target, y_hat)
+    metrics   : pd.DataFrame
+        Backtest metrics (MAE, MAPE) per site & target
+    """
     forecasts = []
     metrics = []
     for site_id, g in df.groupby("site_id"):
