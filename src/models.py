@@ -27,7 +27,7 @@ try:
 except Exception:
     HAS_XGB = False
 
-HORIZON = 14
+HORIZON = 15
 TARGETS = ["units_produced", "power_kwh"]
 
 
@@ -166,4 +166,3 @@ def run_modeling(df: pd.DataFrame, feature_cols: List[str]) -> Tuple[pd.DataFram
                 "mape_model": res.mape_model,
             })
     return pd.concat(forecasts, ignore_index=True), pd.DataFrame(metrics)
-    

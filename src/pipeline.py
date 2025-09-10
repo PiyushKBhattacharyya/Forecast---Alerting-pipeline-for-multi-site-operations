@@ -35,11 +35,21 @@ def run_pipeline() -> None:
 
     # 3. Forecasting
     fut_df, metrics_df = run_modeling(feats, feature_cols)
-    fut_path = OUTPUT_DIR / "forecast_results.csv"
+
+    # Split into required outputs
+    units_fc = fut_df[fut_df["target"] == "units_produced"].drop(columns=["target"])
+    power_fc = fut_df[fut_df["target"] == "power_kwh"].drop(columns=["target"])
+
+    units_path = OUTPUT_DIR / "forecast_units.csv"
+    power_path = OUTPUT_DIR / "forecast_power.csv"
     metrics_path = OUTPUT_DIR / "forecast_metrics.csv"
-    fut_df.to_csv(fut_path, index=False)
+
+    units_fc.to_csv(units_path, index=False)
+    power_fc.to_csv(power_path, index=False)
     metrics_df.to_csv(metrics_path, index=False)
-    print(f"[INFO] Forecasts saved to {fut_path}")
+
+    print(f"[INFO] Units forecast saved to {units_path}")
+    print(f"[INFO] Power forecast saved to {power_path}")
     print(f"[INFO] Metrics saved to {metrics_path}")
 
     # 4. Anomaly detection
