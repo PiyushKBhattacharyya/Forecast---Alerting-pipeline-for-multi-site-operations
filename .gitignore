@@ -1,2 +1,7 @@
 **/*Data
+**/*__pycache__
+*.pyc
+*.log
+logs/
+tmp/
 venv

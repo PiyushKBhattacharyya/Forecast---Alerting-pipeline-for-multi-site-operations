@@ -35,7 +35,7 @@ def run_pipeline() -> None:
 
     # 4. Anomaly detection
     anomalies_df = detect_anomalies(ops, targets=TARGETS)
-    anomalies_path = OUTPUT_DIR / "anomalies.csv"
+    anomalies_path = OUTPUT_DIR / "alerts.csv"
     anomalies_df.to_csv(anomalies_path, index=False)
     print(f"[INFO] Anomalies saved to {anomalies_path}")
 
